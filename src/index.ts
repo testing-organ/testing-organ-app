@@ -6,13 +6,42 @@ export = (app: Probot) => {
     const issues = await context.octokit.issues.listForRepo({
       ...ownerRepoData,
       creator: context.payload.sender.login 
-    })
-    if (issues.data.length) {
+    });
+    if (issues.data.filter((obj) => !('pull_request' in obj)).length === 1) {
       const issueComment = context.issue({
-        body: `Thanks for opening your ${issues.data.length -1}'th issue!`,
+        body: "Nice work opening your first issue!",
       });
       await context.octokit.issues.createComment(issueComment);
     }
+  });
+
+  app.on(["pull_request"], async(context) => {
+    const ownerRepoData = await context.repo();
+    const labels = await context.octokit.issues.listLabelsForRepo({
+      ...ownerRepoData
+    });
+    if (context.payload.pull_request.draft) {
+      const labelString = labels.data
+        .filter((labelObj: any) => labelObj["name"] === "pr.OnGoing")
+        .map((labelObj: any) => labelObj["name"]);
+      await context.octokit.issues.setLabels({
+        ...ownerRepoData,
+        issue_number: context.payload.pull_request.number,
+        labels: labelString
+      })
+    } else {
+      const labelString = labels.data
+        .filter((labelObj: any) => labelObj["name"] === "pr.ToReview")
+        .map((labelObj: any) => labelObj["name"]);
+      await context.octokit.issues.setLabels({
+        ...ownerRepoData,
+        issue_number: context.payload.pull_request.number,
+        labels: labelString
+      })
+    }
+    // console.log(context.payload.pull_request.labels);
+    // console.log(context.payload.pull_request.draft);
+    // console.log(labels);
   });
 
   app.on(["pull_request.merged"], async (context) => {

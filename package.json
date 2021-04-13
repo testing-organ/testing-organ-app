@@ -12,8 +12,8 @@
     "probot-app"
   ],
   "scripts": {
-    "build": "tsc",
-    "start": "tsc -p ./tsconfig.json && probot run ./lib/index.js",
+    "build": "tsc -p ./tsconfig.json",
+    "start": "npm run build && probot run ./lib/index.js",
     "test": "jest"
   },
   "dependencies": {
